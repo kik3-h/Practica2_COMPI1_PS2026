@@ -1,0 +1,18 @@
+# Archivos de compilación
+/build/
+/bin/
+/obj/
+
+# Archivos temporales
+*.log
+*.tmp
+
+# Configuración de IDE
+.vscode/
+.idea/
+*.iml
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
