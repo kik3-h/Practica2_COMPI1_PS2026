@@ -16,3 +16,27 @@
 .DS_Store
 Thumbs.db
 
+#enunciado
+enunciado/
+
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+.svelte-kit/
+
+# Locks
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# IDEs
+*.swp
+*.swo
