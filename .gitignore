@@ -3,6 +3,7 @@
 /bin/
 /obj/
 
+
 # Archivos temporales
 *.log
 *.tmp
@@ -18,7 +19,7 @@ Thumbs.db
 
 #enunciado
 enunciado/
-
+examples/
 # Dependencias
 node_modules/
 
