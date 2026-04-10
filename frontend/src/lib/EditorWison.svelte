@@ -1,9 +1,12 @@
 <script>
+  import * as monaco from 'monaco-editor';
   import { onMount, onDestroy } from 'svelte';
-  import { compilarGramatica, analizarCadena } from '../services/api.js';
+  import { compilarGramatica } from '../services/api.js';
 
-  let editor = null;
-  let monaco = null;
+  let editorContainer = null;
+  let editorInstance = null;
+  let fileInput = null;
+  let resizeHandler = null;
   let consoleOutput = '';
   let isLoading = false;
 
@@ -26,13 +29,13 @@ Syntax {{:
 
 ?Wison`;
 
-  onMount(async () => {
-    const monacoModule = await import('monaco-editor');
-    monaco = monacoModule.default;
+  onMount(() => {
+    if (!editorContainer) {
+      consoleOutput = 'No se encontro el contenedor del editor.';
+      return;
+    }
 
-    const editorContainer = document.getElementById('editor-container');
-    
-    editor = monaco.editor.create(editorContainer, {
+    editorInstance = monaco.editor.create(editorContainer, {
       value: exampleCode,
       language: 'plaintext',
       theme: 'vs-dark',
@@ -45,28 +48,43 @@ Syntax {{:
       padding: { top: 12, bottom: 12 },
     });
 
-    window.addEventListener('resize', () => {
-      if (editor) {
-        editor.layout();
+    resizeHandler = () => {
+      if (editorInstance) {
+        editorInstance.layout();
       }
-    });
+    };
+
+    window.addEventListener('resize', resizeHandler);
   });
 
   onDestroy(() => {
-    if (editor) {
-      editor.dispose();
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler);
+    }
+
+    if (editorInstance) {
+      editorInstance.dispose();
+      editorInstance = null;
     }
   });
 
   async function handleCompile() {
-    if (!editor) return;
-    
+    if (!editorInstance) {
+      consoleOutput = 'El editor no esta inicializado.';
+      return;
+    }
+
+    const textoWison = editorInstance.getValue();
+    if (!textoWison.trim()) {
+      consoleOutput = 'El editor esta vacio. Ingresa codigo Wison antes de compilar.';
+      return;
+    }
+
     isLoading = true;
     consoleOutput = '';
 
     try {
-      const codigo = editor.getValue();
-      const resultado = await compilarGramatica(codigo);
+      const resultado = await compilarGramatica(textoWison);
 
       if (resultado.errores && resultado.errores.length > 0) {
         let errorText = 'ERRORES ENCONTRADOS:\n\n';
@@ -94,6 +112,45 @@ Syntax {{:
     }
   }
 
+  function abrirSelectorArchivo() {
+    if (!fileInput) {
+      consoleOutput = 'No se pudo abrir el selector de archivos.';
+      return;
+    }
+
+    fileInput.click();
+  }
+
+  function manejarCargaArchivo(event) {
+    const archivo = event.target.files?.[0];
+
+    if (!archivo) {
+      return;
+    }
+
+    if (!editorInstance) {
+      consoleOutput = 'El editor no esta inicializado.';
+      event.target.value = '';
+      return;
+    }
+
+    const lector = new FileReader();
+
+    lector.onload = (loadEvent) => {
+      const contenido = typeof loadEvent.target?.result === 'string' ? loadEvent.target.result : '';
+      editorInstance.setValue(contenido);
+      consoleOutput = `Archivo "${archivo.name}" cargado correctamente.`;
+      event.target.value = '';
+    };
+
+    lector.onerror = () => {
+      consoleOutput = `No se pudo leer el archivo "${archivo.name}".`;
+      event.target.value = '';
+    };
+
+    lector.readAsText(archivo);
+  }
+
   function clearConsole() {
     consoleOutput = '';
   }
@@ -103,20 +160,37 @@ Syntax {{:
   <div class="editor-toolbar">
     <button 
       class="btn-primary" 
+      type="button"
       on:click={handleCompile}
       disabled={isLoading}
     >
       {isLoading ? 'Compilando...' : 'Compilar Gramatica'}
     </button>
+    <button
+      class="btn btn-load-file"
+      type="button"
+      on:click={abrirSelectorArchivo}
+      disabled={isLoading}
+    >
+      Cargar Archivo .wison
+    </button>
     <button 
       class="btn-secondary" 
+      type="button"
       on:click={clearConsole}
     >
       Limpiar Consola
     </button>
+    <input
+      type="file"
+      accept=".wison"
+      style="display: none;"
+      bind:this={fileInput}
+      on:change={manejarCargaArchivo}
+    />
   </div>
 
-  <div id="editor-container" class="editor-container"></div>
+  <div class="editor-container" bind:this={editorContainer}></div>
 
   <div class="console-section">
     <div class="console-header">Consola de Salida</div>
@@ -194,7 +268,20 @@ Syntax {{:
     flex: 1;
   }
 
-  .console-output.empty {
+  .btn-load-file {
+    background-color: var(--primary-gold);
+    color: #1e293b;
+    border: 1px solid #d4a400;
+  }
+
+  .btn-load-file:hover:not(:disabled) {
+    background-color: #d4a400;
+    color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 164, 0, 0.35);
+  }
+
+  .empty {
     color: var(--text-muted);
     font-style: italic;
     display: flex;

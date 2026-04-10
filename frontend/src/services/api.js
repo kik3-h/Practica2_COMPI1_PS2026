@@ -7,7 +7,7 @@ export async function compilarGramatica(codigoWison) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ codigo: codigoWison }),
+      body: JSON.stringify({ code: codigoWison }),
     });
 
     if (!response.ok) {
@@ -31,8 +31,8 @@ export async function analizarCadena(codigoWison, cadenaEntrada) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        codigo: codigoWison,
-        entrada: cadenaEntrada,
+        code: codigoWison,
+        input: cadenaEntrada,
       }),
     });
 
