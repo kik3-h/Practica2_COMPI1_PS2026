@@ -1,5 +1,6 @@
 <script>
   import EditorWison from './lib/EditorWison.svelte';
+  import VistaGramaticas from './lib/VistaGramaticas.svelte';
   
   let activeTab = 'inicio';
 
@@ -69,11 +70,7 @@
     </div>
 
     <div class="tab-content {activeTab === 'gramaticas' ? 'active' : ''}">
-      <div class="gramaticas-content">
-        <h2>Gramaticas Disponibles</h2>
-        <p>Esta seccion mostrara las gramaticas compiladas y permitira probar cadenas de entrada.</p>
-        <p>En construccion...</p>
-      </div>
+      <VistaGramaticas />
     </div>
   </div>
 </div>
@@ -135,21 +132,4 @@
     line-height: 1.6;
   }
 
-  .gramaticas-content {
-    padding: 32px;
-    overflow-y: auto;
-    flex: 1;
-  }
-
-  .gramaticas-content h2 {
-    font-size: 24px;
-    margin-bottom: 16px;
-    color: var(--primary-gold);
-  }
-
-  .gramaticas-content p {
-    color: var(--text-muted);
-    margin-bottom: 12px;
-  }
 </style>
-

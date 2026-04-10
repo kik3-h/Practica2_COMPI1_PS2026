@@ -163,7 +163,8 @@ code {
 .content-area {
   flex: 1;
   display: flex;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .tab-content {
@@ -234,4 +235,3 @@ code {
 .scroll-bar::-webkit-scrollbar-thumb:hover {
   background: var(--primary-gold);
 }
-
