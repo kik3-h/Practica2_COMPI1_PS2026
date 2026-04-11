@@ -2,26 +2,8 @@
   import * as d3 from 'd3';
   import { onDestroy, onMount } from 'svelte';
   import { analizarCadena } from '../services/api.js';
+  import { codigoGramaticaActiva } from '../stores/grammarStore.js';
 
-  const ejemploWison = `Wison ¿ Lex {: 
-    Terminal $_Una_A <- 'a' ;
-    Terminal $_Mas <- '+' ;
-    Terminal $_FIN <- 'FIN';
-:}
-
-Syntax {{:
-    No_Terminal %_S ;
-    No_Terminal %_Prod_A ;
-    
-    Initial_Sim %_S ;
-    
-    %_S <= %_Prod_A $_FIN ;
-    %_Prod_A <= $_Una_A $_Mas $_Una_A ;
-:}}
-
-?Wison`;
-
-  let codigoWison = ejemploWison;
   let cadenaEntrada = '';
   let svgContainer = null;
   let arbolActual = null;
@@ -155,7 +137,7 @@ Syntax {{:
   }
 
   async function probarEntrada() {
-    const codigo = codigoWison.trim();
+    const codigo = $codigoGramaticaActiva.trim();
     const entrada = cadenaEntrada;
 
     if (!codigo) {
@@ -235,7 +217,7 @@ Syntax {{:
     <label for="codigo-wison">Gramatica Wison Activa</label>
     <textarea
       id="codigo-wison"
-      bind:value={codigoWison}
+      bind:value={$codigoGramaticaActiva}
       class="input-area"
       rows="10"
       placeholder="Pega aqui la gramatica Wison activa"

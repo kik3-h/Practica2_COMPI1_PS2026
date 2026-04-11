@@ -47,24 +47,78 @@ class Lexer {
   compilarPatrones() {
     const patrones = [];
     
-    this.terminales.forEach(terminal => {
+    this.terminales.forEach((terminal, indiceOriginal) => {
       try {
         const regex = this.expresionARegex(terminal.expression);
+        const esEstatico = this.esPatronEstatico(terminal.expression);
+        const prioridad = esEstatico ? 0 : 1;
+
         patrones.push({
           nombre: terminal.name,
           regex: new RegExp('^(' + regex + ')', 'u'), // Anclar al inicio
-          expresionOriginal: terminal.expression
+          expresionOriginal: terminal.expression,
+          prioridad: prioridad,
+          indiceOriginal: indiceOriginal
         });
         
         if (this.opciones.debug) {
-          console.log('[Lexer] Patron compilado:', terminal.name, '->', regex);
+          console.log('[Lexer] Patron compilado:', terminal.name, '->', regex, '| prioridad:', prioridad);
         }
       } catch (error) {
         console.log('[Lexer] Error compilando patron para', terminal.name, ':', error.message);
       }
     });
+
+    patrones.sort((a, b) => {
+      if (a.prioridad !== b.prioridad) {
+        return a.prioridad - b.prioridad;
+      }
+      return a.indiceOriginal - b.indiceOriginal;
+    });
     
     return patrones;
+  }
+
+  /**
+   * Determina si un patron representa una cadena estatica.
+   *
+   * Los patrones estaticos (por ejemplo 'DEFINE') se priorizan
+   * sobre patrones genericos (por ejemplo [a-zA-Z]+).
+   */
+  esPatronEstatico(expr, visitados = new Set()) {
+    if (!expr || typeof expr !== 'object') {
+      return false;
+    }
+
+    switch (expr.type) {
+      case 'StringLiteral':
+        return true;
+
+      case 'GroupExpression':
+        return this.esPatronEstatico(expr.expression, visitados);
+
+      case 'ConcatenationExpression':
+        return this.esPatronEstatico(expr.left, visitados) && this.esPatronEstatico(expr.right, visitados);
+
+      case 'TerminalReference': {
+        if (!expr.name || visitados.has(expr.name)) {
+          return false;
+        }
+
+        const terminalReferenciado = this.terminales.find((terminal) => terminal.name === expr.name);
+        if (!terminalReferenciado) {
+          return false;
+        }
+
+        visitados.add(expr.name);
+        const esEstatico = this.esPatronEstatico(terminalReferenciado.expression, visitados);
+        visitados.delete(expr.name);
+        return esEstatico;
+      }
+
+      default:
+        return false;
+    }
   }
 
   /**
@@ -199,16 +253,24 @@ class Lexer {
       let mejorMatch = null;
       let mejorLongitud = 0;
       let mejorNombre = null;
+      let mejorPrioridad = Number.POSITIVE_INFINITY;
       
       const textoRestante = entrada.substring(posicion);
       
       for (const patron of this.patronesCompilados) {
         const match = textoRestante.match(patron.regex);
         
-        if (match && match[0].length > mejorLongitud) {
+        if (
+          match &&
+          (
+            match[0].length > mejorLongitud ||
+            (match[0].length === mejorLongitud && patron.prioridad < mejorPrioridad)
+          )
+        ) {
           mejorMatch = match[0];
           mejorLongitud = match[0].length;
           mejorNombre = patron.nombre;
+          mejorPrioridad = patron.prioridad;
         }
       }
       
@@ -287,18 +349,9 @@ class Lexer {
    * Consumir espacios en blanco desde una posicion
    */
   consumirEspacios(texto, posicion) {
-    let consumidos = 0;
-    
-    while (posicion + consumidos < texto.length) {
-      const char = texto[posicion + consumidos];
-      if (char === ' ' || char === '\t' || char === '\n' || char === '\r') {
-        consumidos++;
-      } else {
-        break;
-      }
-    }
-    
-    return { consumidos };
+    const textoRestante = texto.slice(posicion);
+    const match = textoRestante.match(/^\s+/u);
+    return { consumidos: match ? match[0].length : 0 };
   }
 
   /**

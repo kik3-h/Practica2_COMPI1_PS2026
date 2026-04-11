@@ -2,6 +2,7 @@
   import * as monaco from 'monaco-editor';
   import { onMount, onDestroy } from 'svelte';
   import { compilarGramatica } from '../services/api.js';
+  import { codigoGramaticaActiva } from '../stores/grammarStore.js';
 
   let editorContainer = null;
   let editorInstance = null;
@@ -96,6 +97,7 @@ Syntax {{:
         });
         consoleOutput = errorText;
       } else {
+        $codigoGramaticaActiva = textoWison;
         consoleOutput = 'COMPILACION EXITOSA\n';
         consoleOutput += 'Gramatica compilada correctamente.\n';
         if (resultado.tabla_ll1) {
