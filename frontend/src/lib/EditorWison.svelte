@@ -2,7 +2,7 @@
   import * as monaco from 'monaco-editor';
   import { onMount, onDestroy } from 'svelte';
   import { compilarGramatica } from '../services/api.js';
-  import { codigoGramaticaActiva } from '../stores/grammarStore.js';
+  import { codigoGramaticaActiva, tablaSimbolosActiva, guardarGramatica } from '../stores/grammarStore.js';
 
   let editorContainer = null;
   let editorInstance = null;
@@ -10,6 +10,7 @@
   let resizeHandler = null;
   let consoleOutput = '';
   let isLoading = false;
+  let nombreGramatica = '';
 
   const exampleCode = `Wison ¿ Lex {: 
     Terminal $_Una_A <- 'a' ;
@@ -69,6 +70,44 @@ Syntax {{:
     }
   });
 
+  function extraerTablaSimbolos(ast) {
+    if (!ast || typeof ast !== 'object') {
+      return [];
+    }
+
+    const simbolos = [];
+    const simbolosVistos = new Set();
+
+    const agregarSimbolo = (simbolo, tipo) => {
+      if (!simbolo) {
+        return;
+      }
+
+      const simboloNormalizado = String(simbolo);
+      const clave = `${tipo}:${simboloNormalizado}`;
+      if (simbolosVistos.has(clave)) {
+        return;
+      }
+
+      simbolos.push({ simbolo: simboloNormalizado, tipo });
+      simbolosVistos.add(clave);
+    };
+
+    if (Array.isArray(ast.terminals)) {
+      ast.terminals.forEach((terminal) => {
+        agregarSimbolo(typeof terminal === 'string' ? terminal : terminal?.name, 'Terminal');
+      });
+    }
+
+    if (Array.isArray(ast.nonTerminals)) {
+      ast.nonTerminals.forEach((noTerminal) => {
+        agregarSimbolo(typeof noTerminal === 'string' ? noTerminal : noTerminal?.name, 'No Terminal');
+      });
+    }
+
+    return simbolos;
+  }
+
   async function handleCompile() {
     if (!editorInstance) {
       consoleOutput = 'El editor no esta inicializado.';
@@ -104,6 +143,12 @@ Syntax {{:
           consoleOutput += '\nTabla LL(1) generada exitosamente.\n';
         }
         if (resultado.ast) {
+          $tablaSimbolosActiva = extraerTablaSimbolos(resultado.ast);
+          guardarGramatica(
+            nombreGramatica || 'Gramatica Sin Nombre',
+            textoWison,
+            $tablaSimbolosActiva
+          );
           consoleOutput += 'AST generado exitosamente.\n';
         }
       }
@@ -168,6 +213,13 @@ Syntax {{:
     >
       {isLoading ? 'Compilando...' : 'Compilar Gramatica'}
     </button>
+    <input
+      type="text"
+      class="input-nombre-gramatica"
+      placeholder="Nombre de la gramatica"
+      bind:value={nombreGramatica}
+      disabled={isLoading}
+    />
     <button
       class="btn btn-load-file"
       type="button"
@@ -226,11 +278,29 @@ Syntax {{:
 
   .editor-toolbar {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
     padding: 8px 12px;
     background-color: var(--dark-bg);
     border-radius: 4px;
     border: 1px solid var(--border-color);
+  }
+
+  .input-nombre-gramatica {
+    min-width: 240px;
+    flex: 1 1 260px;
+    max-width: 360px;
+    background-color: #0f172a;
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  .input-nombre-gramatica::placeholder {
+    color: var(--text-muted);
   }
 
   .editor-container {
