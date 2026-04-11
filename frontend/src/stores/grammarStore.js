@@ -51,3 +51,17 @@ export function guardarGramatica(nombre, codigo, tabla) {
     return actualizadas;
   });
 }
+
+export function limpiarHistorial() {
+  gramaticasGuardadas.set([]);
+
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.removeItem('wison_grammars');
+  } catch (error) {
+    console.error('No se pudo limpiar el historial de gramaticas:', error);
+  }
+}

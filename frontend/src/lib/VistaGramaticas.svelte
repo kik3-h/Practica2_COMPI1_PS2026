@@ -2,7 +2,12 @@
   import * as d3 from 'd3';
   import { onDestroy, onMount } from 'svelte';
   import { analizarCadena } from '../services/api.js';
-  import { codigoGramaticaActiva, tablaSimbolosActiva, gramaticasGuardadas } from '../stores/grammarStore.js';
+  import {
+    codigoGramaticaActiva,
+    tablaSimbolosActiva,
+    gramaticasGuardadas,
+    limpiarHistorial
+  } from '../stores/grammarStore.js';
 
   let cadenaEntrada = '';
   let svgContainer = null;
@@ -240,6 +245,13 @@
         {/each}
       {/if}
     </div>
+    <button
+      class="btn btn-outline-danger btn-limpiar-historial"
+      type="button"
+      on:click={limpiarHistorial}
+    >
+      Limpiar Historial
+    </button>
   </aside>
 
   <div class="panel-contenido">
@@ -319,8 +331,9 @@
 <style>
   .vista-gramaticas {
     display: grid;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 20px;
     padding: 16px;
     height: 100%;
     min-height: 0;
@@ -340,28 +353,28 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
   }
 
   .panel-lista {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    min-height: 0;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    max-height: 600px;
+    overflow-y: auto;
   }
 
   .panel-contenido {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-width: 0;
-    min-height: 0;
+    display: contents;
   }
 
   .lista-gramaticas {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    overflow-y: auto;
     padding-right: 4px;
   }
 
@@ -409,6 +422,19 @@
     box-shadow: 0 4px 10px rgba(0, 77, 152, 0.35);
   }
 
+  .btn-limpiar-historial {
+    margin-top: 14px;
+    border-color: #a50044;
+    color: #a50044;
+    font-weight: 600;
+  }
+
+  .btn-limpiar-historial:hover {
+    background-color: #a50044;
+    border-color: #8a0036;
+    color: #ffffff;
+  }
+
   h2,
   h3 {
     color: var(--primary-gold);
@@ -444,7 +470,7 @@
   .tabla-simbolos-wrapper {
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    max-height: 220px;
+    max-height: 250px;
     overflow-y: auto;
   }
 
@@ -531,6 +557,8 @@
     flex-direction: column;
     gap: 10px;
     flex: 1 1 auto;
+    grid-column: 1 / 3;
+    grid-row: 2 / 3;
     min-height: 500px;
     overflow: hidden;
   }
@@ -556,8 +584,16 @@
   @media (max-width: 1200px) {
     .vista-gramaticas {
       grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
       height: auto;
       overflow-y: auto;
+    }
+
+    .panel-lista,
+    .panel-entrada,
+    .panel-arbol {
+      grid-column: 1 / 2;
+      grid-row: auto;
     }
 
     .panel-lista {
